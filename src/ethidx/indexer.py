@@ -211,6 +211,12 @@ class Indexer:
             await conn.commit()
 
         metrics.BLOCKS.inc(len(parsed))
+        last_block = parsed[-1]
+        if last_block["base_fee_gwei"] is not None:
+            metrics.BASE_FEE.set(float(last_block["base_fee_gwei"]))
+        if last_block["gas_limit"]:
+            metrics.FULLNESS.set(last_block["gas_used"] / last_block["gas_limit"])
+        metrics.TX_COUNT.set(last_block["tx_count"])
         for t in transfers:
             metrics.TRANSFERS.labels(token=t["token"]).inc()
             log.info("whale %s %s %s -> %s (block %d)", t["amount"], t["token"],
